@@ -11,7 +11,8 @@ namespace POCBotButCSharp
     [SlashCommand("ping", "Pong!")]
     public async Task PingAsync()
     {
-      await RespondAsync("gnip!");
+      // Send a response containing Latency
+      await RespondAsync($"GNIP! Latency: {Context.Client.Latency}ms");
     }
 
     [SlashCommand("checkserver", "Checks if the Minecraft server is alive.")]
