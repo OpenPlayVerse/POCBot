@@ -1,5 +1,3 @@
-using System.ComponentModel;
-using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Newtonsoft.Json;
@@ -18,23 +16,30 @@ namespace POCBotButCSharp
     [SlashCommand("checkserver", "Checks if the Minecraft server is alive.")]
     public async Task CheckServerAsync([Choice("Project OpenComputers 3", "poc3.namelessserver.net"), Choice("Warpy", "warpy.namelessserver.net")] string server)
     {
-      var client = new HttpClient();
-      var response = await client.GetAsync($"https://api.mcsrvstat.us/2/{server}");
-      var content = await response.Content.ReadAsStringAsync();
-      var status = JsonConvert.DeserializeObject<QuickType.ServerData>(content);
 
-      if (status != null && status.Players != null && status.Online)
+      using (var client = new HttpClient())
       {
-        var serverInfoEmbed = new Discord.EmbedBuilder()
-          .WithTitle($"Server Info for {server}: {(status.Online ? "✅" : "❌")}")
-          .AddField("Total Players: ", status.Players.Online > 0 ? $"{status.Players.Online}/{status.Players.Max}" : "None", true)
-          .WithDescription($"```{string.Join(" ", status.Motd.Raw)}```")
-          .WithColor(Discord.Color.Blue)
-          .Build();
-        await RespondAsync(embed: serverInfoEmbed);
+        var response = await client.GetAsync($"https://api.mcsrvstat.us/2/{server}");
+        var content = await response.Content.ReadAsStringAsync();
+        var status = JsonConvert.DeserializeObject<QuickType.ServerData>(content);
+        // Rest of the code
+        if (status != null && status.Players != null && status.Online)
+        {
+          var serverInfoEmbed = new Discord.EmbedBuilder()
+            .WithTitle($"Server Info for {server}: {(status.Online ? "✅" : "❌")}")
+            .AddField("Total Players: ", status.Players.Online > 0 ? $"{status.Players.Online}/{status.Players.Max}" : "None", true)
+            .WithDescription($"```{string.Join(" ", status.Motd.Raw)}```")
+            .WithColor(Discord.Color.Blue)
+            .Build();
+          await RespondAsync(embed: serverInfoEmbed);
+        }
       }
     }
 
+
+    /*
+    I don't really get this bit it does a news command with two subcommands: subscribe and unsubscribe 
+    */
     [Discord.Interactions.Group("news", "Lets you subscribe and unsubscribe to news")]
     public class NewsGroup : InteractionModuleBase<SocketInteractionContext>
     {
