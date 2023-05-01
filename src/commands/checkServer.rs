@@ -1,7 +1,6 @@
 use crate::{Context, Error as PoiseError};
 use serde::{Deserialize, Serialize};
 use serenity::utils::Colour;
-use std::collections::HashMap;
 
 // Create a struct to represent the server argument.
 #[derive(poise::ChoiceParameter)]
