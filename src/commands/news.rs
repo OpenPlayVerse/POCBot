@@ -13,7 +13,7 @@ pub async fn news(_ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn has_role(ctx: &Context<'_>, member: &Member, role_id: u64) -> bool {
+pub fn has_role(_ctx: &Context<'_>, member: &Member, role_id: u64) -> bool {
     member.roles.contains(&RoleId(role_id))
 }
 
@@ -61,7 +61,6 @@ pub async fn unsubscribe(ctx: Context<'_>, roles: Roles) -> Result<(), Error> {
 		let member_mut = member.to_mut();
         member_mut.remove_role(&ctx, &RoleId(role)).await?;
         ctx.say(format!("You nolonger have the role <@&{}>!", role)).await?;
-
     } else {
 		ctx.say(format!("You don't have the role <@&{}>!", role)).await?;
     }
