@@ -29,3 +29,9 @@ jobs:
         args: --best --lzma
         # File to compress
         file: target/release/pocbot
+    - name: Publish artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: Build Files
+        path: |
+          target/release/pocbot
