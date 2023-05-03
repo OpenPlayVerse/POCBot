@@ -60,7 +60,7 @@ pub async fn unsubscribe(ctx: Context<'_>, roles: Roles) -> Result<(), Error> {
     if has_role(&ctx, &member, role) {
 		let member_mut = member.to_mut();
         member_mut.remove_role(&ctx, &RoleId(role)).await?;
-        ctx.say(format!("You nolonger have the role <@&{}>!", role)).await?;
+        ctx.say(format!("You no longer have the role <@&{}>!", role)).await?;
     } else {
 		ctx.say(format!("You don't have the role <@&{}>!", role)).await?;
     }
