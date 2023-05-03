@@ -17,7 +17,7 @@ pub fn has_role(_ctx: &Context<'_>, member: &Member, role_id: u64) -> bool {
     member.roles.contains(&RoleId(role_id))
 }
 
-/// A subcommand of `parent`
+/// lets you subscribe to updates
 #[poise::command(prefix_command, slash_command)]
 pub async fn subscribe(ctx: Context<'_>, roles: Roles) -> Result<(), Error> {
     let role = match roles {
@@ -43,7 +43,7 @@ pub async fn subscribe(ctx: Context<'_>, roles: Roles) -> Result<(), Error> {
 }
 
 
-/// Another subcommand of `parent`
+/// Lets you unsubscribe from updates
 #[poise::command(prefix_command, slash_command)]
 pub async fn unsubscribe(ctx: Context<'_>, roles: Roles) -> Result<(), Error> {
     let role = match roles {

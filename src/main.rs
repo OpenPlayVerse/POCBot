@@ -86,7 +86,8 @@ async fn main() {
             // changing a parameter type, you should call this function.
             commands::register::register(),
 			commands::checkServer::checkserver(),
-			commands::ping::ping()
+			commands::ping::ping(),
+			commands::news::news(),
         ],
         event_handler: |ctx, event, framework, user_data| {
             Box::pin(event_event_handler(ctx, event, framework, user_data))
