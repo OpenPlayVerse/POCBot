@@ -13,8 +13,8 @@ pub enum Server {
 pub async fn checkserver(ctx: Context<'_>, server: Server) -> Result<(), PoiseError> {
     ctx.defer().await?;
     let server_address = match server {
-        Server::POC3 => "poc3.namelessserver.net",
-        Server::Warpy => "warpy.namelessserver.net",
+        Server::POC3 => "poc3.openplayverse.net",
+        Server::Warpy => "warpy.openplayverse.net",
     };
 
     match check_server(server_address).await {
