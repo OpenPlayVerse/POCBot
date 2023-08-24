@@ -2,9 +2,9 @@ name: Rust
 
 on:
   push:
-    branches: [ "rust-rewrite" ]
+    branches: ["rust-rewrite"]
   pull_request:
-    branches: [ "rust-rewrite" ]
+    branches: ["rust-rewrite"]
 
 env:
   CARGO_TERM_COLOR: always
@@ -14,20 +14,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Build
-      run: cargo build --release
-    - name: Run tests
-      run: cargo test
-    - name: UPX GitHub Action
-      uses: crazy-max/ghaction-upx@v2.2.0
-      with:
-        args: --best --lzma
-        files: |
-          target/release/pocbot
-    - name: Publish artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: Build Files
-        path: |
-          target/release/pocbot
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cargo build --release
+      - name: Run tests
+        run: cargo test
+      - name: UPX GitHub Action
+        uses: crazy-max/ghaction-upx@v2.2.0
+        with:
+          args: --best --lzma
+          files: |
+            target/release/pocbot
+      - name: Publish artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: Build Files
+          path: |
+            target/release/pocbot
+      - name: Build Docker Images
+        uses: philips-software/docker-ci-scripts@v4.5.0
+        with:
+          dockerfile: .
+          image-name: pocbot
+          tags: latest 0.1
+        env:
+          REGISTRY_USERNAME: ${{ github.actor }}
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY_URL: ghcr.io/OpenPlayVerse
+          GITHUB_ORGANIZATION: OpenPlayVerse
