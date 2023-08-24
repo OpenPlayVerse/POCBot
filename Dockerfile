@@ -1,22 +1,18 @@
 # Use the official Alpine Linux image as the base image
-FROM alpine:latest
+FROM debian:unstable-slim
 
-# Install required packages
-RUN apk update && apk add --no-cache \
-  curl \
-  unzip
+RUN apt-get update && apt-get install -y libssl3
 
 # Set the working directory
 WORKDIR /app
 
-# Fetch the Build Files.zip
-RUN curl -L -o Build_Files.zip https://nightly.link/OpenPlayVerse/POCBot/workflows/rust/rust-rewrite/Build%20Files.zip
+COPY target/release/pocbot /app/pocbot
 
-# Unzip the files
-RUN unzip Build_Files.zip
+# Debuggign
+RUN ls -la /app
 
 # Set permissions for the executable
-RUN chmod +x pocbot
+RUN chmod +x ./pocbot
 
 # Run the pocbot executable
-CMD ["/app/pocbot"]
+CMD ["./pocbot"]
