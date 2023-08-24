@@ -19,4 +19,4 @@ RUN unzip Build_Files.zip
 RUN chmod +x pocbot
 
 # Run the pocbot executable
-CMD ["./pocbot"]
+CMD ["/app/pocbot"]
