@@ -40,5 +40,5 @@ jobs:
         env:
           REGISTRY_USERNAME: ${{ github.actor }}
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REGISTRY_URL: ghcr.io/OpenPlayVerse
+          REGISTRY_URL: ghcr.io/openplayverse
           GITHUB_ORGANIZATION: OpenPlayVerse
