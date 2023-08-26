@@ -1,6 +1,6 @@
 use crate::{Context, Error as PoiseError};
+use poise::serenity_prelude::Colour;
 use serde::{Deserialize, Serialize};
-use serenity::utils::Colour;
 
 // Create a struct to represent the server argument.
 #[derive(poise::ChoiceParameter)]
@@ -11,8 +11,6 @@ pub enum Server {
 
 #[poise::command(slash_command, prefix_command)]
 pub async fn checkserver(ctx: Context<'_>, server: Server) -> Result<(), PoiseError> {
-    ctx.defer().await?;
-
     let server_address = match server {
         Server::POC3 => "poc3.openplayverse.net",
         Server::Warpy => "warpy.openplayverse.net",
@@ -20,10 +18,10 @@ pub async fn checkserver(ctx: Context<'_>, server: Server) -> Result<(), PoiseEr
 
     match check_server(server_address).await {
         Ok(Some(status)) => {
-            ctx.send(|message| {
-                message.embed(|e| {
+            poise::send_reply(ctx, |m| {
+                m.embed(|e| {
                     e.title(format!(
-                        "Server Info for {:?}: {}",
+                        "Server info for {:?}: {}",
                         server_address,
                         if status.online { "✅" } else { "❌" }
                     ));

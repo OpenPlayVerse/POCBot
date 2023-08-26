@@ -1,18 +1,16 @@
-# Use the official Alpine Linux image as the base image
-FROM debian:unstable-slim
-
-RUN apt-get update && apt-get install -y libssl3
+FROM rust:1.72.0-slim-bookworm
 
 # Set the working directory
 WORKDIR /app
 
-COPY target/release/pocbot /app/pocbot
+# Copy code to the thingy
+copy . .
 
-# Debuggign
-RUN ls -la /app
+# Install openss;
+RUN apt-get update && apt-get install -y libssl-dev pkg-config && rm -rf /var/lib/apt/lists/*
 
-# Set permissions for the executable
-RUN chmod +x ./pocbot
+# Install Deps
+RUN cargo install --path .
 
 # Run the pocbot executable
-CMD ["./pocbot"]
+CMD ["pocbot"]
