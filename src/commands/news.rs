@@ -1,11 +1,11 @@
 use poise::serenity_prelude::{Member, RoleId};
-
-use crate::{Context,Error};
+use crate::{Context, Error};
+use log::{info, error};
 
 #[derive(poise::ChoiceParameter)]
 pub enum Roles {
-	ServerUpdates,
-	TechnicalUpdates,
+    ServerUpdates,
+    TechnicalUpdates,
 }
 
 #[poise::command(prefix_command, slash_command, subcommands("subscribe", "unsubscribe"))]
@@ -17,52 +17,58 @@ pub fn has_role(_ctx: &Context<'_>, member: &Member, role_id: u64) -> bool {
     member.roles.contains(&RoleId(role_id))
 }
 
-/// lets you subscribe to updates
-#[poise::command(prefix_command, slash_command)]
-pub async fn subscribe(ctx: Context<'_>, roles: Roles) -> Result<(), Error> {
-    let role = match roles {
+async fn get_member(ctx: &Context<'_>) -> Result<Member, Error> {
+    match ctx.author_member().await {
+        Some(member) => Ok(member),
+        None => {
+            error!("Member not found");
+            Err("Member not found".into())
+        }
+    }
+}
+
+fn parse_role(roles: Roles) -> Result<u64, Error> {
+    let role_str = match roles {
         Roles::ServerUpdates => "805078371725869066",
         Roles::TechnicalUpdates => "944371601560969326",
     };
+    role_str.parse::<u64>().map_err(|e| {
+        error!("Failed to parse role ID: {}", e);
+        "Failed to parse role ID".into()
+    })
+}
 
-    let mut member = match ctx.author_member().await {
-        Some(m) => m,
-        None => return Ok(()), // member not found, do nothing
-    };
+/// lets you subscribe to updates
+#[poise::command(prefix_command, slash_command)]
+pub async fn subscribe(ctx: Context<'_>, roles: Roles) -> Result<(), Error> {
+    let role = parse_role(roles)?;
+    let mut member = get_member(&ctx).await?;
 
-    let role = role.parse::<u64>().unwrap();
     if has_role(&ctx, &member, role) {
         ctx.say(format!("You already have the role <@&{}>!", role)).await?;
     } else {
         let member_mut = member.to_mut();
         member_mut.add_role(&ctx, &RoleId(role)).await?;
         ctx.say(format!("You now have the role <@&{}>!", role)).await?;
+        info!("Role <@&{}> added to user {}", role, ctx.author().name);
     }
 
     Ok(())
 }
 
-
 /// Lets you unsubscribe from updates
 #[poise::command(prefix_command, slash_command)]
 pub async fn unsubscribe(ctx: Context<'_>, roles: Roles) -> Result<(), Error> {
-    let role = match roles {
-        Roles::ServerUpdates => "805078371725869066",
-        Roles::TechnicalUpdates => "944371601560969326",
-    };
+    let role = parse_role(roles)?;
+    let mut member = get_member(&ctx).await?;
 
-    let mut member = match ctx.author_member().await {
-        Some(m) => m,
-        None => return Ok(()), // member not found, do nothing
-    };
-
-    let role = role.parse::<u64>().unwrap();
     if has_role(&ctx, &member, role) {
-		let member_mut = member.to_mut();
+        let member_mut = member.to_mut();
         member_mut.remove_role(&ctx, &RoleId(role)).await?;
         ctx.say(format!("You no longer have the role <@&{}>!", role)).await?;
+        info!("Role <@&{}> removed from user {}", role, ctx.author().name);
     } else {
-		ctx.say(format!("You don't have the role <@&{}>!", role)).await?;
+        ctx.say(format!("You don't have the role <@&{}>!", role)).await?;
     }
 
     Ok(())

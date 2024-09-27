@@ -2,11 +2,15 @@ mod commands;
 
 use dotenv::dotenv;
 use poise::serenity_prelude as serenity;
+use tokio::sync::Mutex;
+use std::collections::HashMap;
+use log::{info, error};
 
 /// A shared instance of this struct is available across all events and framework commands
 pub struct Data {
-    command_counter: std::sync::Mutex<std::collections::HashMap<String, u64>>,
+    command_counter: Mutex<HashMap<String, u64>>,
 }
+
 /// This Error type is used throughout all commands and callbacks
 type Error = Box<dyn std::error::Error + Send + Sync>;
 
@@ -21,7 +25,7 @@ async fn event_event_handler(
 ) -> Result<(), Error> {
     match event {
         poise::Event::Ready { data_about_bot } => {
-            println!("{} is connected!", data_about_bot.user.name)
+            info!("{} is connected!", data_about_bot.user.name);
         }
         _ => {}
     }
@@ -30,16 +34,13 @@ async fn event_event_handler(
 }
 
 async fn pre_command(ctx: Context<'_>) {
-    println!(
+    info!(
         "Got command '{}' by user '{}'",
         ctx.command().name,
         ctx.author().name
     );
 
-    // Increment the number of times this command has been run once. If
-    // the command's name does not exist in the counter, add a default
-    // value of 0.
-    let mut command_counter = ctx.data().command_counter.lock().unwrap();
+    let mut command_counter = ctx.data().command_counter.lock().await;
     let entry = command_counter
         .entry(ctx.command().name.to_string())
         .or_insert(0);
@@ -47,20 +48,20 @@ async fn pre_command(ctx: Context<'_>) {
 }
 
 async fn post_command(ctx: Context<'_>) {
-    println!("Processed command '{}'", ctx.command().name);
+    info!("Processed command '{}'", ctx.command().name);
 }
 
 async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
     match error {
         poise::FrameworkError::Command { error, ctx } => {
-            println!(
+            error!(
                 "Command '{}' returned error {:?}",
                 ctx.command().name,
                 error
             );
         }
         poise::FrameworkError::EventHandler { error, event, .. } => {
-            println!(
+            error!(
                 "EventHandler returned error during {:?} event: {:?}",
                 event.name(),
                 error
@@ -68,64 +69,55 @@ async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
         }
         error => {
             if let Err(e) = poise::builtins::on_error(error).await {
-                println!("Error while handling error: {}", e)
+                error!("Error while handling error: {}", e);
             }
         }
     }
 }
 
+fn register_commands() -> Vec<poise::Command<Data, Error>> {
+    vec![
+        commands::register::register(),
+        commands::checkServer::checkserver(),
+        commands::ping::ping(),
+        commands::news::news(),
+    ]
+}
 
 #[tokio::main]
 async fn main() {
-	dotenv().ok();
+    dotenv().ok();
+    env_logger::init();
+
+    let token = std::env::var("DISCORD_TOKEN").expect("Expected DISCORD_TOKEN in the environment");
 
     let options = poise::FrameworkOptions {
-        commands: vec![
-            // This function registers slash commands on Discord. When you change something about a
-            // command signature, for example by changing its name, adding or removing parameters, or
-            // changing a parameter type, you should call this function.
-            commands::register::register(),
-			commands::checkServer::checkserver(),
-			commands::ping::ping(),
-			commands::news::news(),
-        ],
+        commands: register_commands(),
         event_handler: |ctx, event, framework, user_data| {
             Box::pin(event_event_handler(ctx, event, framework, user_data))
         },
         on_error: |error| Box::pin(on_error(error)),
-        // Set a function to be called prior to each command execution. This
-        // provides all context of the command that would also be passed to the actual command code
         pre_command: |ctx| Box::pin(pre_command(ctx)),
-        // Similar to `pre_command`, except will be called directly _after_
-        // command execution.
         post_command: |ctx| Box::pin(post_command(ctx)),
-
-        // Options specific to prefix commands, i.e. commands invoked via chat messages
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some(String::from("~")),
-
             mention_as_prefix: false,
-            // An edit tracker needs to be supplied here to make edit tracking in commands work
             edit_tracker: Some(poise::EditTracker::for_timespan(
                 std::time::Duration::from_secs(3600 * 3),
             )),
             ..Default::default()
         },
-
         ..Default::default()
     };
 
-    // The Framework builder will automatically retrieve the bot owner and application ID via the
-    // passed token, so that information need not be passed here
     poise::Framework::builder()
-        // Configure the client with your Discord bot token in the environment.
-        .token(std::env::var("DISCORD_TOKEN").expect("Expected DISCORD_TOKEN in the environment"))
+        .token(token)
         .options(options)
-		.intents(serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT)
+        .intents(serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT)
         .setup(|_ctx, _data_about_bot, _framework| {
             Box::pin(async move {
                 Ok(Data {
-                    command_counter: std::sync::Mutex::new(std::collections::HashMap::new()),
+                    command_counter: Mutex::new(HashMap::new()),
                 })
             })
         })
