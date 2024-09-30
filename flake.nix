@@ -4,20 +4,26 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     cargo2nix.url = "github:cargo2nix/cargo2nix";
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
     self,
     nixpkgs,
     cargo2nix,
+    rust-overlay,
   }: let
     system = "x86_64-linux";
     pkgs = import nixpkgs {
       inherit system;
-      overlays = [cargo2nix.overlays.default];
+      overlays = [cargo2nix.overlays.default rust-overlay.overlays.default];
     };
     rustPkgs = pkgs.rustBuilder.makePackageSet {
       packageFun = import ./Cargo.nix;
+      packageOverrides = pkgs: pkgs.rustBuilder.overrides.all;
     };
     # The workspace defines a development shell with all of the dependencies
     # and environment settings necessary for a regular `cargo build`.
@@ -29,11 +35,22 @@
       #   export PS1="\033[0;31m☠dev-shell☠ $ \033[0m"
       # '';
     }; # supports override & overrideAttrs
+
+    # A shell for users to quickly bootstrap projects.  Contains cargo2nix
+    # and the rustToolchain used to build this cargo2nix.
+    bootstrapShell = pkgs.mkShell {
+      packages = [cargo2nix];
+      # inputsFrom = [ cargo2nix ];
+      nativeBuildInputs = cargo2nix.nativeBuildInputs;
+    };
   in rec {
     packages = {
       pocbot = rustPkgs.workspace.pocbot."1.0.2" {};
       default = packages.pocbot;
     };
-    devshell.default = workspaceShell;
+    devShells."${system}" = {
+      default = workspaceShell;
+      bootstrap = bootstrapShell;
+    };
   };
 }
