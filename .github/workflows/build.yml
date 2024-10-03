@@ -15,14 +15,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install Nix
-        run: |
-          curl -L https://nixos.org/nix/install | sh
-          . /home/runner/.nix-profile/etc/profile.d/nix.sh
-
-      - name: Set up Nix Flakes
-        run: nix-env -iA nixpkgs.nixFlakes
+      - uses: DeterminateSystems/nix-installer-action@main
 
       - name: Enter Nix Shell and Build
         run: |
