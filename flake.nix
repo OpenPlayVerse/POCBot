@@ -7,6 +7,7 @@
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "flake-utils";
     };
   };
 
@@ -23,6 +24,7 @@
     };
     rustPkgs = pkgs.rustBuilder.makePackageSet {
       packageFun = import ./Cargo.nix;
+      rustVersion = "1.81.0";
       packageOverrides = pkgs: pkgs.rustBuilder.overrides.all;
     };
     # The workspace defines a development shell with all of the dependencies
@@ -30,27 +32,20 @@
     # Passes through all arguments to pkgs.mkShell for adding supplemental
     # dependencies.
     workspaceShell = rustPkgs.workspaceShell {
-      # packages = [ pkgs.somethingExtra ];
+      packages = [pkgs.rustfmt];
       # shellHook = ''
       #   export PS1="\033[0;31m☠dev-shell☠ $ \033[0m"
       # '';
     }; # supports override & overrideAttrs
-
-    # A shell for users to quickly bootstrap projects.  Contains cargo2nix
-    # and the rustToolchain used to build this cargo2nix.
-    bootstrapShell = pkgs.mkShell {
-      packages = [cargo2nix];
-      # inputsFrom = [ cargo2nix ];
-      nativeBuildInputs = cargo2nix.nativeBuildInputs;
-    };
   in rec {
     packages = {
       pocbot = rustPkgs.workspace.pocbot."1.0.2" {};
       default = packages.pocbot;
+
+      shell = devShells.default;
     };
     devShells."${system}" = {
       default = workspaceShell;
-      bootstrap = bootstrapShell;
     };
   };
 }

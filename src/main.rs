@@ -17,14 +17,14 @@ type Error = Box<dyn std::error::Error + Send + Sync>;
 /// This type alias will save us some typing, because the Context type is needed often
 type Context<'a> = poise::Context<'a, Data, Error>;
 
-async fn event_event_handler(
+async fn event_event_handler<'a>(
     _ctx: &serenity::Context,
-    event: &poise::Event<'_>,
-    _framework: poise::FrameworkContext<'_, Data, Error>,
+    event: &serenity::FullEvent,
+    _framework: poise::FrameworkContext<'a, Data, Error>,
     _user_data: &Data,
 ) -> Result<(), Error> {
     match event {
-        poise::Event::Ready { data_about_bot } => {
+        serenity::FullEvent::Ready { data_about_bot } => {
             info!("{} is connected!", data_about_bot.user.name);
         }
         _ => {}
@@ -53,7 +53,7 @@ async fn post_command(ctx: Context<'_>) {
 
 async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
     match error {
-        poise::FrameworkError::Command { error, ctx } => {
+        poise::FrameworkError::Command { error, ctx , .. } => {
             error!(
                 "Command '{}' returned error {:?}",
                 ctx.command().name,
@@ -63,7 +63,7 @@ async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
         poise::FrameworkError::EventHandler { error, event, .. } => {
             error!(
                 "EventHandler returned error during {:?} event: {:?}",
-                event.name(),
+                event.snake_case_name(),
                 error
             );
         }
@@ -87,10 +87,9 @@ fn register_commands() -> Vec<poise::Command<Data, Error>> {
 #[tokio::main]
 async fn main() {
     dotenv().ok();
-    env_logger::init();
 
     let token = std::env::var("DISCORD_TOKEN").expect("Expected DISCORD_TOKEN in the environment");
-
+    let intents = serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT;
     let options = poise::FrameworkOptions {
         commands: register_commands(),
         event_handler: |ctx, event, framework, user_data| {
@@ -104,16 +103,14 @@ async fn main() {
             mention_as_prefix: false,
             edit_tracker: Some(poise::EditTracker::for_timespan(
                 std::time::Duration::from_secs(3600 * 3),
-            )),
+            ).into()),
             ..Default::default()
         },
         ..Default::default()
     };
 
-    poise::Framework::builder()
-        .token(token)
+    let framework = poise::Framework::builder()
         .options(options)
-        .intents(serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT)
         .setup(|_ctx, _data_about_bot, _framework| {
             Box::pin(async move {
                 Ok(Data {
@@ -121,7 +118,13 @@ async fn main() {
                 })
             })
         })
-        .run()
-        .await
-        .expect("Client error");
+        .build();
+
+    let client = serenity::ClientBuilder::new(token, intents)
+    .framework(framework)
+    .await;
+
+    client.unwrap().start().await.unwrap()
+
+    
 }

@@ -1,5 +1,5 @@
 use crate::{Context, Error as PoiseError};
-use poise::serenity_prelude::Colour;
+use poise::serenity_prelude::{self, Colour};
 use serde::{Deserialize, Serialize};
 use log::{info, error};
 
@@ -49,31 +49,31 @@ async fn check_server(server: &str) -> anyhow::Result<Option<ServerData>> {
 }
 
 async fn send_server_status(ctx: Context<'_>, server_address: &str, status: ServerData) -> Result<(), PoiseError> {
-    poise::send_reply(ctx, |m| {
-        m.embed(|e| {
-            e.title(format!(
+    let mut embed = serenity_prelude::CreateEmbed::default()
+    .title(format!(
                 "Server info for {}: {}",
                 server_address,
                 if status.online { "✅" } else { "❌" }
-            ));
+            ))
+            .color(Colour::from_rgb(0, 0, 255));
 
             if let Some(motd) = status.motd.as_ref() {
-                e.description(format!("```{}```", motd.raw.join("\n")));
+                    embed = embed.description(format!("```{}```", motd.raw.join("\n")));
             }
 
-            e.color(Colour::from_rgb(0, 0, 255));
 
             if let Some(players) = status.players.as_ref() {
-                e.field(
+                embed = embed.field(
                     "Total Players:",
                     format!("{}/{}", players.online, players.max),
                     true,
                 );
             }
 
-            e
-        })
-    })
+            
+    ctx.send(poise::CreateReply::default()
+        .embed(embed))
+
     .await?;
 
     Ok(())
@@ -109,7 +109,7 @@ pub struct Debug {
     cacheexpire: i64,
     apiversion: i64,
     dns: Dns,
-    error: Error,
+    error: DebugError,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -145,7 +145,7 @@ pub struct SrvA {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct Error {
+pub struct DebugError {
     query: String,
 }
 

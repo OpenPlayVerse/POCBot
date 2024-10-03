@@ -14,12 +14,12 @@ pub async fn news(_ctx: Context<'_>) -> Result<(), Error> {
 }
 
 pub fn has_role(_ctx: &Context<'_>, member: &Member, role_id: u64) -> bool {
-    member.roles.contains(&RoleId(role_id))
+    member.roles.contains(&RoleId::new(role_id))
 }
 
 async fn get_member(ctx: &Context<'_>) -> Result<Member, Error> {
     match ctx.author_member().await {
-        Some(member) => Ok(member),
+        Some(member) => Ok(member.into_owned()),
         None => {
             error!("Member not found");
             Err("Member not found".into())
@@ -38,17 +38,16 @@ fn parse_role(roles: Roles) -> Result<u64, Error> {
     })
 }
 
-/// lets you subscribe to updates
+/// Lets you subscribe to updates
 #[poise::command(prefix_command, slash_command)]
 pub async fn subscribe(ctx: Context<'_>, roles: Roles) -> Result<(), Error> {
     let role = parse_role(roles)?;
-    let mut member = get_member(&ctx).await?;
+    let member = get_member(&ctx).await?;
 
     if has_role(&ctx, &member, role) {
         ctx.say(format!("You already have the role <@&{}>!", role)).await?;
     } else {
-        let member_mut = member.to_mut();
-        member_mut.add_role(&ctx, &RoleId(role)).await?;
+        member.add_role(&ctx, RoleId::new(role)).await?;
         ctx.say(format!("You now have the role <@&{}>!", role)).await?;
         info!("Role <@&{}> added to user {}", role, ctx.author().name);
     }
@@ -60,11 +59,10 @@ pub async fn subscribe(ctx: Context<'_>, roles: Roles) -> Result<(), Error> {
 #[poise::command(prefix_command, slash_command)]
 pub async fn unsubscribe(ctx: Context<'_>, roles: Roles) -> Result<(), Error> {
     let role = parse_role(roles)?;
-    let mut member = get_member(&ctx).await?;
+    let member = get_member(&ctx).await?;
 
     if has_role(&ctx, &member, role) {
-        let member_mut = member.to_mut();
-        member_mut.remove_role(&ctx, &RoleId(role)).await?;
+        member.remove_role(&ctx, RoleId::new(role)).await?;
         ctx.say(format!("You no longer have the role <@&{}>!", role)).await?;
         info!("Role <@&{}> removed from user {}", role, ctx.author().name);
     } else {
