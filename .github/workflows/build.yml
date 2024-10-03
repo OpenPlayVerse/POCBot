@@ -36,7 +36,7 @@ jobs:
             target/release/pocbot
 
       - name: Publish artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: Build Files
           path: |
