@@ -24,7 +24,7 @@
     };
     rustPkgs = pkgs.rustBuilder.makePackageSet {
       packageFun = import ./Cargo.nix;
-      rustVersion = "1.81.0";
+      rustVersion = "latest";
       packageOverrides = pkgs: pkgs.rustBuilder.overrides.all;
     };
     # The workspace defines a development shell with all of the dependencies
