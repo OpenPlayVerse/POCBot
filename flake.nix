@@ -3,11 +3,11 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    cargo2nix.url = "github:cargo2nix/cargo2nix";
+    cargo2nix.url = "github:cargo2nix/cargo2nix/main";
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.flake-utils.follows = "flake-utils";
+      # inputs.flake-utils.follows = "flake-utils";
     };
   };
 
@@ -25,7 +25,6 @@
     rustPkgs = pkgs.rustBuilder.makePackageSet {
       packageFun = import ./Cargo.nix;
       rustVersion = "latest";
-      packageOverrides = pkgs: pkgs.rustBuilder.overrides.all;
     };
     # The workspace defines a development shell with all of the dependencies
     # and environment settings necessary for a regular `cargo build`.
