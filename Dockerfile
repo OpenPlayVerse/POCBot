@@ -1,21 +1,15 @@
-FROM rust:1.81.0-alpine
+FROM alpine:latest
+
+# Install runtime dependencies
+RUN apk add --no-cache \
+    openssl \
+    ca-certificates
 
 # Set the working directory
 WORKDIR /app
 
-# Install dependencies
-RUN apk update && apk add --no-cache \
-    openssl \
-    openssl-dev \
-    pkgconfig \
-    musl-dev \
-    build-base
-
-# Copy code to the working directory
-COPY . .
-
-# Build the project
-RUN cargo build --release
+# Copy the built binary from the host
+COPY target/release/pocbot /app/pocbot
 
 # Run the pocbot executable
-CMD ["./target/release/pocbot"]
+CMD ["./pocbot"]
