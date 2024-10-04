@@ -1,4 +1,4 @@
-FROM rust:1.81.0-slim-bookworm
+FROM rust:1.81.0-alpine
 
 # Set the working directory
 WORKDIR /app
