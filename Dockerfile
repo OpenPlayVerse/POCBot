@@ -3,14 +3,18 @@ FROM rust:1.81.0-alpine
 # Set the working directory
 WORKDIR /app
 
-# Copy code to the thingy
-copy . .
+# Install dependencies
+RUN apk update && apk add --no-cache \
+    openssl-dev \
+    pkgconfig \
+    musl-dev \
+    build-base
 
-# Install openss;
-RUN apt-get update && apt-get install -y libssl-dev pkg-config && rm -rf /var/lib/apt/lists/*
+# Copy code to the working directory
+COPY . .
 
-# Install Deps
-RUN cargo install --path .
+# Build the project
+RUN cargo build --release
 
 # Run the pocbot executable
-CMD ["pocbot"]
+CMD ["./target/release/pocbot"]
