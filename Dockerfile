@@ -5,6 +5,7 @@ WORKDIR /app
 
 # Install dependencies
 RUN apk update && apk add --no-cache \
+    openssl \
     openssl-dev \
     pkgconfig \
     musl-dev \
