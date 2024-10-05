@@ -91,6 +91,10 @@
     "root": {
       "inputs": {
         "cargo2nix": "cargo2nix",
+        "flake-utils": [
+          "cargo2nix",
+          "flake-utils"
+        ],
         "nixpkgs": "nixpkgs_2",
         "rust-overlay": "rust-overlay_2"
       }
