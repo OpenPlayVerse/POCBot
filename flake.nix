@@ -8,7 +8,6 @@
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.flake-utils.follows = "flake-utils";
     };
   };
 
@@ -22,11 +21,11 @@
     flake-utils.lib.eachDefaultSystem (system: let
       pkgs = import nixpkgs {
         inherit system;
-        overlays = [cargo2nix.overlays.default];
+        overlays = [cargo2nix.overlays.default rust-overlay.overlays.default];
       };
       rustPkgs = pkgs.rustBuilder.makePackageSet {
         packageFun = import ./Cargo.nix;
-        rustVersion = "latest";
+        rustVersion = "1.81.0";
       };
       workspaceShell = rustPkgs.workspaceShell {
         # packages = [ pkgs.somethingExtra ];
