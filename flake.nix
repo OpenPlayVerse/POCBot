@@ -28,19 +28,16 @@
         packageFun = import ./Cargo.nix;
         rustVersion = "latest";
       };
-      # The workspace defines a development shell with all of the dependencies
-      # and environment settings necessary for a regular `cargo build`.
-      # Passes through all arguments to pkgs.mkShell for adding supplemental
-      # dependencies.
-      workspaceShell = pkgs.mkShell {
+      workspaceShell = rustPkgs.workspaceShell {
+        # packages = [ pkgs.somethingExtra ];
         # shellHook = ''
         #   export PS1="\033[0;31m☠dev-shell☠ $ \033[0m"
         # '';
-      };
+      }; # supports override & overrideAttrs
     in rec {
       packages = {
         pocbot = rustPkgs.workspace.pocbot {};
-        default = packages.pocbot;
+        default = packages.pocbot.bin;
       };
       devShells = {
         default = workspaceShell;
