@@ -1,5 +1,6 @@
 use crate::{Context, Error};
-use log::{error, info};
+use anyhow::{Context as AnyhowContext, Result};
+use log::info;
 use poise::serenity_prelude::{Member, RoleId};
 
 #[derive(poise::ChoiceParameter)]
@@ -13,29 +14,27 @@ pub async fn news(_ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn has_role(_ctx: &Context<'_>, member: &Member, role_id: u64) -> bool {
+/// Checks if a member has a specific role
+pub fn has_role(member: &Member, role_id: u64) -> bool {
     member.roles.contains(&RoleId::new(role_id))
 }
 
+/// Retrieves the member object for the command author
 async fn get_member(ctx: &Context<'_>) -> Result<Member, Error> {
-    match ctx.author_member().await {
-        Some(member) => Ok(member.into_owned()),
-        None => {
-            error!("Member not found");
-            Err("Member not found".into())
-        }
-    }
+    Ok(ctx
+        .author_member()
+        .await
+        .context("Failed to retrieve member")
+        .map(|member| member.into_owned())?)
 }
 
+/// Parses the role enum into a role ID
 fn parse_role(roles: Roles) -> Result<u64, Error> {
     let role_str = match roles {
         Roles::ServerUpdates => "805078371725869066",
         Roles::TechnicalUpdates => "944371601560969326",
     };
-    role_str.parse::<u64>().map_err(|e| {
-        error!("Failed to parse role ID: {}", e);
-        "Failed to parse role ID".into()
-    })
+    Ok(role_str.parse::<u64>().context("Failed to parse role ID")?)
 }
 
 /// Lets you subscribe to updates
@@ -44,7 +43,7 @@ pub async fn subscribe(ctx: Context<'_>, roles: Roles) -> Result<(), Error> {
     let role = parse_role(roles)?;
     let member = get_member(&ctx).await?;
 
-    if has_role(&ctx, &member, role) {
+    if has_role(&member, role) {
         ctx.say(format!("You already have the role <@&{}>!", role))
             .await?;
     } else {
@@ -63,7 +62,7 @@ pub async fn unsubscribe(ctx: Context<'_>, roles: Roles) -> Result<(), Error> {
     let role = parse_role(roles)?;
     let member = get_member(&ctx).await?;
 
-    if has_role(&ctx, &member, role) {
+    if has_role(&member, role) {
         member.remove_role(&ctx, RoleId::new(role)).await?;
         ctx.say(format!("You no longer have the role <@&{}>!", role))
             .await?;

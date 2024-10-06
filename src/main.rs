@@ -5,6 +5,7 @@ use log::{error, info};
 use poise::serenity_prelude as serenity;
 use std::collections::HashMap;
 use tokio::sync::Mutex;
+use tokio::time::Duration;
 
 /// A shared instance of this struct is available across all events and framework commands
 pub struct Data {
@@ -103,7 +104,7 @@ async fn main() {
             prefix: Some(String::from("~")),
             mention_as_prefix: false,
             edit_tracker: Some(
-                poise::EditTracker::for_timespan(std::time::Duration::from_secs(3600 * 3)).into(),
+                poise::EditTracker::for_timespan(Duration::from_secs(3600 * 3)).into(),
             ),
             ..Default::default()
         },
