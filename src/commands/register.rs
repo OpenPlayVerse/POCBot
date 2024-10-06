@@ -1,4 +1,4 @@
-use crate::{Context,Error};
+use crate::{Context, Error};
 
 /// Registers slash commands in this guild or globally
 #[poise::command(prefix_command, hide_in_help)]

@@ -1,10 +1,10 @@
 mod commands;
 
 use dotenv::dotenv;
+use log::{error, info};
 use poise::serenity_prelude as serenity;
-use tokio::sync::Mutex;
 use std::collections::HashMap;
-use log::{info, error};
+use tokio::sync::Mutex;
 
 /// A shared instance of this struct is available across all events and framework commands
 pub struct Data {
@@ -53,7 +53,7 @@ async fn post_command(ctx: Context<'_>) {
 
 async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
     match error {
-        poise::FrameworkError::Command { error, ctx , .. } => {
+        poise::FrameworkError::Command { error, ctx, .. } => {
             error!(
                 "Command '{}' returned error {:?}",
                 ctx.command().name,
@@ -89,7 +89,8 @@ async fn main() {
     dotenv().ok();
 
     let token = std::env::var("DISCORD_TOKEN").expect("Expected DISCORD_TOKEN in the environment");
-    let intents = serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT;
+    let intents =
+        serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT;
     let options = poise::FrameworkOptions {
         commands: register_commands(),
         event_handler: |ctx, event, framework, user_data| {
@@ -101,9 +102,9 @@ async fn main() {
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some(String::from("~")),
             mention_as_prefix: false,
-            edit_tracker: Some(poise::EditTracker::for_timespan(
-                std::time::Duration::from_secs(3600 * 3),
-            ).into()),
+            edit_tracker: Some(
+                poise::EditTracker::for_timespan(std::time::Duration::from_secs(3600 * 3)).into(),
+            ),
             ..Default::default()
         },
         ..Default::default()
@@ -121,10 +122,8 @@ async fn main() {
         .build();
 
     let client = serenity::ClientBuilder::new(token, intents)
-    .framework(framework)
-    .await;
+        .framework(framework)
+        .await;
 
     client.unwrap().start().await.unwrap()
-
-    
 }

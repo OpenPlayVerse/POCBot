@@ -1,6 +1,6 @@
-use poise::serenity_prelude::{Member, RoleId};
 use crate::{Context, Error};
-use log::{info, error};
+use log::{error, info};
+use poise::serenity_prelude::{Member, RoleId};
 
 #[derive(poise::ChoiceParameter)]
 pub enum Roles {
@@ -45,10 +45,12 @@ pub async fn subscribe(ctx: Context<'_>, roles: Roles) -> Result<(), Error> {
     let member = get_member(&ctx).await?;
 
     if has_role(&ctx, &member, role) {
-        ctx.say(format!("You already have the role <@&{}>!", role)).await?;
+        ctx.say(format!("You already have the role <@&{}>!", role))
+            .await?;
     } else {
         member.add_role(&ctx, RoleId::new(role)).await?;
-        ctx.say(format!("You now have the role <@&{}>!", role)).await?;
+        ctx.say(format!("You now have the role <@&{}>!", role))
+            .await?;
         info!("Role <@&{}> added to user {}", role, ctx.author().name);
     }
 
@@ -63,10 +65,12 @@ pub async fn unsubscribe(ctx: Context<'_>, roles: Roles) -> Result<(), Error> {
 
     if has_role(&ctx, &member, role) {
         member.remove_role(&ctx, RoleId::new(role)).await?;
-        ctx.say(format!("You no longer have the role <@&{}>!", role)).await?;
+        ctx.say(format!("You no longer have the role <@&{}>!", role))
+            .await?;
         info!("Role <@&{}> removed from user {}", role, ctx.author().name);
     } else {
-        ctx.say(format!("You don't have the role <@&{}>!", role)).await?;
+        ctx.say(format!("You don't have the role <@&{}>!", role))
+            .await?;
     }
 
     Ok(())
