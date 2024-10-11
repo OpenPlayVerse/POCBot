@@ -43,4 +43,9 @@
         default = workspaceShell;
       };
     });
+
+  nixConfig = {
+    extra-substituters = ["https://pocbot.cachix.org"];
+    extra-trusted-public-keys = ["pocbot.cachix.org-1:CQf58F6rUcUA/mHTJN0YJRyK1AfIOUe8bu7lP45hhjo="];
+  };
 }
