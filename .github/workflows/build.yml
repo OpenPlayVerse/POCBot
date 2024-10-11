@@ -32,14 +32,14 @@ jobs:
         with:
           args: --best --lzma
           files: |
-            target/release/pocbot
+            result-bin/bin/pocbot
 
       - name: Publish artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Build Files
           path: |
-            target/release/pocbot
+            result-bin/bin/pocbot
 
       # - name: Build Docker Image
       #   run: |
