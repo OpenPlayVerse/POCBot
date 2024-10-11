@@ -101,19 +101,19 @@ async fn main() {
         pre_command: |ctx| Box::pin(pre_command(ctx)),
         post_command: |ctx| Box::pin(post_command(ctx)),
         prefix_options: poise::PrefixFrameworkOptions {
-            prefix: Some(String::from("~")),
+            prefix: Some("~".into()),
             mention_as_prefix: false,
             edit_tracker: Some(
                 poise::EditTracker::for_timespan(Duration::from_secs(3600 * 3)).into(),
             ),
             ..Default::default()
-        },
+        }, 
         ..Default::default()
     };
 
     let framework = poise::Framework::builder()
         .options(options)
-        .setup(|_ctx, _data_about_bot, _framework| {
+        .setup(|_ctx, _ready, _framework| {
             Box::pin(async move {
                 Ok(Data {
                     command_counter: Mutex::new(HashMap::new()),
