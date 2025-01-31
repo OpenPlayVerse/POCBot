@@ -1,51 +1,79 @@
 {
-  description = "A flake for building a Rust project with cargo2nix";
-
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    cargo2nix.url = "github:cargo2nix/cargo2nix/main";
-    flake-utils.follows = "cargo2nix/flake-utils";
-    rust-overlay = {
-      url = "github:oxalica/rust-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    crane.url = "github:ipetkov/crane";
+    flake-utils.url = "github:numtide/flake-utils";
   };
 
   outputs = {
     self,
     nixpkgs,
-    cargo2nix,
-    rust-overlay,
+    crane,
     flake-utils,
+    ...
   }:
     flake-utils.lib.eachDefaultSystem (system: let
-      pkgs = import nixpkgs {
-        inherit system;
-        overlays = [cargo2nix.overlays.default rust-overlay.overlays.default];
+      pkgs = nixpkgs.legacyPackages.${system};
+      craneLib = crane.mkLib pkgs;
+
+      # Common derivation arguments used for all builds
+      commonArgs = {
+        src = craneLib.cleanCargoSource ./.;
+        strictDeps = true;
+
+        buildInputs = with pkgs; [
+          # Add extra build inputs here, etc.
+          # openssl
+        ];
+
+        nativeBuildInputs = with pkgs; [
+          # Add extra native build inputs here, etc.
+          # pkg-config
+        ];
       };
-      rustPkgs = pkgs.rustBuilder.makePackageSet {
-        packageFun = import ./Cargo.nix;
-        rustVersion = "1.81.0";
-        extraRustComponents = ["rustfmt" "clippy"];
-      };
-      workspaceShell = rustPkgs.workspaceShell {
-        # packages = [ pkgs.somethingExtra ];
-        # shellHook = ''
-        #   export PS1="\033[0;31m☠dev-shell☠ $ \033[0m"
-        # '';
-      }; # supports override & overrideAttrs
-    in rec {
+
+      # Build *just* the cargo dependencies, so we can reuse
+      # all of that work (e.g. via cachix) when running in CI
+      cargoArtifacts = craneLib.buildDepsOnly (commonArgs
+        // {
+          # Additional arguments specific to this derivation can be added here.
+          # Be warned that using `//` will not do a deep copy of nested
+          # structures
+          pname = "mycrate-deps";
+        });
+
+      # First, run clippy (and deny all warnings) on the crate source.
+      myCrateClippy = craneLib.cargoClippy (commonArgs
+        // {
+          # Again we apply some extra arguments only to this derivation
+          # and not every where else. In this case we add some clippy flags
+          inherit cargoArtifacts;
+          cargoClippyExtraArgs = "--all-targets -- --allow warnings";
+        });
+
+      # Next, we want to run the tests and collect code-coverage, _but only if
+      # the clippy checks pass_ so we do not waste any extra cycles.
+      myCrateCoverage = craneLib.cargoTarpaulin (commonArgs
+        // {
+          cargoArtifacts = myCrateClippy;
+        });
+
+      # Build the actual crate itself, _but only if the previous tests pass_.
+      myCrate = craneLib.buildPackage (commonArgs
+        // {
+          cargoArtifacts = myCrateCoverage;
+        });
+    in {
       packages = {
-        pocbot = rustPkgs.workspace.pocbot {};
-        default = packages.pocbot.bin;
+        default = myCrate;
+        pocbot = myCrate;
       };
-      devShells = {
-        default = workspaceShell;
+      checks = {
+        inherit
+          # Build the crate as part of `nix flake check` for convenience
+          myCrate
+          myCrateCoverage
+          ;
       };
     });
-
-  nixConfig = {
-    extra-substituters = ["https://pocbot.cachix.org"];
-    extra-trusted-public-keys = ["pocbot.cachix.org-1:CQf58F6rUcUA/mHTJN0YJRyK1AfIOUe8bu7lP45hhjo="];
-  };
 }

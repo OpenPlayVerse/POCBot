@@ -1,0 +1,3 @@
+/home/greysilly7/git/POCBot/devenv.lock
+/home/greysilly7/git/POCBot/devenv.nix
+/home/greysilly7/git/POCBot/devenv.yaml
