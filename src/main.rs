@@ -1,21 +1,19 @@
 mod commands;
+mod utils;
 
 use dotenv::dotenv;
-use log::{error, info};
+use log::{error, info, LevelFilter};
 use poise::serenity_prelude as serenity;
 use std::collections::HashMap;
 use tokio::sync::Mutex;
 use tokio::time::Duration;
 
-/// A shared instance of this struct is available across all events and framework commands
 pub struct Data {
     command_counter: Mutex<HashMap<String, u64>>,
 }
 
-/// This Error type is used throughout all commands and callbacks
 type Error = Box<dyn std::error::Error + Send + Sync>;
 
-/// This type alias will save us some typing, because the Context type is needed often
 type Context<'a> = poise::Context<'a, Data, Error>;
 
 async fn event_event_handler<'a>(
@@ -85,9 +83,14 @@ fn register_commands() -> Vec<poise::Command<Data, Error>> {
     ]
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() {
     dotenv().ok();
+    env_logger::builder()
+        .default_format()
+        .filter_module("pocbot", LevelFilter::Trace)
+        .try_init()
+        .unwrap();
 
     let token = std::env::var("DISCORD_TOKEN").expect("Expected DISCORD_TOKEN in the environment");
     let intents =

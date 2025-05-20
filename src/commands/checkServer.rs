@@ -1,10 +1,8 @@
 use crate::{Context, Error as PoiseError};
-use async_minecraft_ping::{ConnectionConfig, StatusResponse};
 use log::{error, info};
-use poise::serenity_prelude::{self, model::connection, Colour};
-use serde::{Deserialize, Serialize};
+use poise::serenity_prelude::{self, Colour};
+use crate::utils::check::{get_server_status_from_api, McSrvStatResponse};
 
-// Create a struct to represent the server argument.
 #[derive(poise::ChoiceParameter)]
 pub enum Server {
     POC3,
@@ -15,28 +13,23 @@ pub enum Server {
 #[poise::command(slash_command, prefix_command)]
 pub async fn checkserver(ctx: Context<'_>, server: Server) -> Result<(), PoiseError> {
     let server_address = resolve_server_address(server);
-
-    match check_server(server_address).await {
+    
+    match get_server_status_from_api(server_address).await {
         Ok(status) => {
-            send_server_status(ctx, server_address, status).await?;
-            info!(
-                "Server status for {} retrieved successfully",
-                server_address
-            );
+            if status.online {
+                send_server_status_from_api(ctx, server_address, status).await?;
+                info!(
+                    "Server status for {} retrieved successfully via API",
+                    server_address
+                );
+            } else {
+                ctx.say(format!("Server {} is offline according to the API.", server_address)).await?;
+                info!("Server {} is offline via API", server_address);
+            }
         }
-        /*
-        Ok(None) => {
-            ctx.say("Failed to get server status.").await?;
-            error!("Failed to get server status for {}", server_address);
-        }
-        */
-        Err(err) => {
-            ctx.say(format!("Failed to get server status: {:?}", err))
-                .await?;
-            error!(
-                "Error getting server status for {}: {:?}",
-                server_address, err
-            );
+        Err(e) => {
+            ctx.say(format!("Error fetching server status for {}: {}", server_address, e)).await?;
+            error!("Error getting server status for {} via API: {}", server_address, e);
         }
     }
 
@@ -51,37 +44,50 @@ fn resolve_server_address(server: Server) -> &'static str {
     }
 }
 
-async fn check_server(server: &str) -> anyhow::Result<async_minecraft_ping::StatusResponse> {
-    let config = async_minecraft_ping::ConnectionConfig::build(server);
-    let connection = config.connect().await?;
-    let status = connection.status().await?.status;
-    Ok(status)
-}
-
-async fn send_server_status(
+async fn send_server_status_from_api(
     ctx: Context<'_>,
     server_address: &str,
-    status: async_minecraft_ping::StatusResponse,
+    status: McSrvStatResponse,
 ) -> Result<(), PoiseError> {
-    let embed = serenity_prelude::CreateEmbed::default()
+    let mut embed = serenity_prelude::CreateEmbed::default()
         .title(format!(
             "Server info for {}: {}",
-            server_address,
-            if status.version.name.is_empty() { "❌" } else { "✅" } 
+            status.hostname.as_deref().unwrap_or(server_address),
+            if status.online { "✅" } else { "❌" }
         ))
-        .color(Colour::from_rgb(0, 0, 255))
-        .description(format!("```{:?}```", status.description))
-        .field(
-            "Total Players:",
-            format!(
-                "{}/{}",
-                status.players.online.to_string(),
-                status.players.max.to_string()
-            ),
+        .color(if status.online { Colour::from_rgb(0, 255, 0) } else { Colour::from_rgb(255, 0, 0) });
+
+    if let Some(motd) = &status.motd {
+        embed = embed.description(motd.clean.join("\n"));
+    } else {
+        embed = embed.description("No MOTD available.");
+    }
+
+    if let Some(players) = &status.players {
+        embed = embed.field(
+            "Players:",
+            format!("{}/{}", players.online.unwrap_or(0), players.max.unwrap_or(0)),
             true,
-        )
-        .field("Version:", status.version.name, true)
-        .field("Protocol:", status.version.protocol.to_string(), true);
+        );
+        if let Some(list) = &players.list {
+            if !list.is_empty() {
+                embed = embed.field("Player List:", list.iter().map(|p| p.name.clone()).collect::<Vec<String>>().join(", "), true);
+            }
+        }
+    } else {
+        embed = embed.field("Players:", "N/A", true);
+    }
+    
+    embed = embed.field("Version:", status.version.as_deref().unwrap_or("N/A"), true);
+
+    if let Some(protocol) = &status.protocol {
+        embed = embed.field("Protocol:", protocol.name.as_deref().unwrap_or("N/A"), true);
+    }
+    
+    // Use the direct icon endpoint from mcsrvstat.us
+    let icon_url = format!("https://api.mcsrvstat.us/icon/{}", server_address);
+    embed = embed.thumbnail(icon_url);
+
 
     ctx.send(poise::CreateReply::default().embed(embed)).await?;
 
