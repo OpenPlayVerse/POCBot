@@ -54,7 +54,7 @@ async fn send_server_status_from_api(
         status.hostname.as_deref().unwrap_or(server_address),
         if status.online { "✅" } else { "❌" }
     );
-    let color = if status.online { Colour::GREEN } else { Colour::RED };
+    let color = if status.online { Colour::DARK_GREEN } else { Colour::RED };
 
     let mut embed = serenity_prelude::CreateEmbed::default()
         .title(title)
