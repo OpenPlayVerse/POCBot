@@ -23,12 +23,14 @@
 
         buildInputs = with pkgs; [
           # Add extra build inputs here, etc.
-          # openssl
+          openssl
         ];
 
         nativeBuildInputs = with pkgs; [
           # Add extra native build inputs here, etc.
-          # pkg-config
+          pkg-config
+          clang
+          mold
         ];
       };
 
@@ -39,11 +41,11 @@
           # Additional arguments specific to this derivation can be added here.
           # Be warned that using `//` will not do a deep copy of nested
           # structures
-          pname = "mycrate-deps";
+          pname = "pocbotcrate-deps";
         });
 
       # First, run clippy (and deny all warnings) on the crate source.
-      myCrateClippy = craneLib.cargoClippy (commonArgs
+      pocbotCrateClippy = craneLib.cargoClippy (commonArgs
         // {
           # Again we apply some extra arguments only to this derivation
           # and not every where else. In this case we add some clippy flags
@@ -53,26 +55,26 @@
 
       # Next, we want to run the tests and collect code-coverage, _but only if
       # the clippy checks pass_ so we do not waste any extra cycles.
-      myCrateCoverage = craneLib.cargoTarpaulin (commonArgs
+      pocbotCrateCoverage = craneLib.cargoTarpaulin (commonArgs
         // {
-          cargoArtifacts = myCrateClippy;
+          cargoArtifacts = pocbotCrateClippy;
         });
 
       # Build the actual crate itself, _but only if the previous tests pass_.
-      myCrate = craneLib.buildPackage (commonArgs
+      pocbotCrate = craneLib.buildPackage (commonArgs
         // {
-          cargoArtifacts = myCrateCoverage;
+          cargoArtifacts = pocbotCrateCoverage;
         });
     in {
       packages = {
-        default = myCrate;
-        pocbot = myCrate;
+        default = pocbotCrate;
+        pocbot = pocbotCrate;
       };
       checks = {
         inherit
           # Build the crate as part of `nix flake check` for convenience
-          myCrate
-          myCrateCoverage
+          pocbotCrate
+          pocbotCrateCoverage
           ;
       };
     });

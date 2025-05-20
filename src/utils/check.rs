@@ -1,9 +1,6 @@
-// REMINDER: Add `reqwest = { version = "0.11", features = ["json", "rustls-tls"] }` to Cargo.toml
 use reqwest::Client;
 use serde::Deserialize;
-use std::time::Duration; // Keep for potential timeouts if needed elsewhere, or remove if not.
 
-// Structs for mcsrvstat.us API response (Version 3)
 #[derive(Debug, Deserialize)]
 pub struct McSrvStatResponse {
     pub online: bool,
@@ -95,24 +92,19 @@ pub struct InfoSection {
     pub html: Vec<String>,
 }
 
-/// Fetches Minecraft server status from the mcsrvstat.us API.
 pub async fn get_server_status_from_api(address: &str) -> Result<McSrvStatResponse, reqwest::Error> {
     let client = Client::builder()
-        .timeout(Duration::from_secs(10)) // Optional: set a timeout for the request
         .build()?;
         
     let url = format!("https://api.mcsrvstat.us/3/{}", address);
     
-    // A descriptive and non-empty User-Agent request header is required by the API.
     let response = client
         .get(&url)
-        .header("User-Agent", "POCBot/0.1 (Rust Discord Bot; +https://github.com/OpenPlayVerse/POCBot)") // Customize with your bot's info
+        .header("User-Agent", "POCBot/0.1 (Rust Discord Bot; +https://github.com/OpenPlayVerse/POCBot)")
         .send()
         .await?;
 
     if !response.status().is_success() {
-        // You might want to return a custom error here based on status code
-        // For now, reqwest::Error will be created by error_for_status()
         return Err(response.error_for_status().unwrap_err());
     }
 

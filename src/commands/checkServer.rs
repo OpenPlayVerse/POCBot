@@ -49,29 +49,27 @@ async fn send_server_status_from_api(
     server_address: &str,
     status: McSrvStatResponse,
 ) -> Result<(), PoiseError> {
-    let mut embed = serenity_prelude::CreateEmbed::default()
-        .title(format!(
-            "Server info for {}: {}",
-            status.hostname.as_deref().unwrap_or(server_address),
-            if status.online { "✅" } else { "❌" }
-        ))
-        .color(if status.online { Colour::from_rgb(0, 255, 0) } else { Colour::from_rgb(255, 0, 0) });
+    let title = format!(
+        "Server info for {}: {}",
+        status.hostname.as_deref().unwrap_or(server_address),
+        if status.online { "✅" } else { "❌" }
+    );
+    let color = if status.online { Colour::GREEN } else { Colour::RED };
 
-    if let Some(motd) = &status.motd {
-        embed = embed.description(motd.clean.join("\n"));
-    } else {
-        embed = embed.description("No MOTD available.");
-    }
+    let mut embed = serenity_prelude::CreateEmbed::default()
+        .title(title)
+        .color(color);
+
+    embed = embed.description(status.motd.as_ref().map_or_else(|| "No MOTD available.".to_string(), |m| m.clean.join("\n")));
 
     if let Some(players) = &status.players {
-        embed = embed.field(
-            "Players:",
-            format!("{}/{}", players.online.unwrap_or(0), players.max.unwrap_or(0)),
-            true,
-        );
+        let player_count_text = format!("{}/{}", players.online.unwrap_or(0), players.max.unwrap_or(0));
+        embed = embed.field("Players:", player_count_text, true);
+
         if let Some(list) = &players.list {
             if !list.is_empty() {
-                embed = embed.field("Player List:", list.iter().map(|p| p.name.clone()).collect::<Vec<String>>().join(", "), true);
+                let player_list_text = list.iter().map(|p| p.name.as_str()).collect::<Vec<&str>>().join(", ");
+                embed = embed.field("Player List:", player_list_text, true);
             }
         }
     } else {

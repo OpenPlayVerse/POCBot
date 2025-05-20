@@ -58,6 +58,10 @@ async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
                 ctx.command().name,
                 error
             );
+            let error_message = format!("Oops! An error occurred while running the '{}' command.", ctx.command().name);
+            if let Err(e) = ctx.say(error_message).await {
+                error!("Failed to send error message to user: {}", e);
+            }
         }
         poise::FrameworkError::EventHandler { error, event, .. } => {
             error!(
@@ -127,7 +131,8 @@ async fn main() {
 
     let client = serenity::ClientBuilder::new(token, intents)
         .framework(framework)
-        .await;
+        .await
+        .expect("Failed to create Discord client");
 
-    client.unwrap().start().await.unwrap()
+    client.start().await.expect("Client failed to start");
 }
