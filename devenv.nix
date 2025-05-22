@@ -18,6 +18,7 @@
 
   packages = [
     pkgs.gcc
+    pkgs.openssl
     pkgs.openssl.dev
     pkgs.mold
     pkgs.clang

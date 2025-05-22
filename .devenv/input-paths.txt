@@ -1,3 +1,7 @@
+/home/greysilly7/git/POCBot/.devenv/flake.json
+/home/greysilly7/git/POCBot/.devenv.flake.nix
+/home/greysilly7/git/POCBot/.env
+/home/greysilly7/git/POCBot/devenv.local.nix
 /home/greysilly7/git/POCBot/devenv.lock
 /home/greysilly7/git/POCBot/devenv.nix
 /home/greysilly7/git/POCBot/devenv.yaml

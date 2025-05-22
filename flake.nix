@@ -17,13 +17,13 @@
       craneLib = crane.mkLib pkgs;
 
       # Common derivation arguments used for all builds
-      commonArgs = {
+      commonArgs = rec {
         src = craneLib.cleanCargoSource ./.;
         strictDeps = true;
 
         buildInputs = with pkgs; [
-          # Add extra build inputs here, etc.
           openssl
+          zlib
         ];
 
         nativeBuildInputs = with pkgs; [
@@ -32,6 +32,8 @@
           clang
           mold
         ];
+
+        LD_LIBRARY_PATH = "${nixpkgs.lib.makeLibraryPath buildInputs}";
       };
 
       # Build *just* the cargo dependencies, so we can reuse
