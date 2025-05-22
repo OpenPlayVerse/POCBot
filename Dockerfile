@@ -9,7 +9,7 @@ RUN apk add --no-cache \
 WORKDIR /app
 
 # Copy the built binary from the host
-COPY target/release/pocbot /app/pocbot
+COPY result-bin/bin/pocbot /app/pocbot
 
 # Run the pocbot executable
 CMD ["./pocbot"]
