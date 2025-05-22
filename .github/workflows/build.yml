@@ -41,13 +41,13 @@ jobs:
           path: |
             result-bin/bin/pocbot
 
-      # - name: Build Docker Image
-      #   run: |
-      #     docker buildx create --use
-      #     docker buildx build --platform linux/amd64 -t ghcr.io/openplayverse/pocbot:latest -f Dockerfile .
+      - name: Build Docker Image
+        run: |
+          docker buildx create --use
+          docker buildx build --platform linux/amd64 -t ghcr.io/openplayverse/pocbot:latest -f Dockerfile .
 
-      # - name: Login to GitHub Container Registry
-      #   run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Login to GitHub Container Registry
+        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      # - name: Push Docker Image to GitHub Container Registry
-      #   run: docker buildx build --platform linux/amd64 -t ghcr.io/openplayverse/pocbot:latest -f Dockerfile . --push
+      - name: Push Docker Image to GitHub Container Registry
+        run: docker buildx build --platform linux/amd64 -t ghcr.io/openplayverse/pocbot:latest -f Dockerfile . --push
